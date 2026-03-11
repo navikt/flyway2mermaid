@@ -12,14 +12,38 @@ Generate [Mermaid ER diagrams](https://mermaid.js.org/syntax/entityRelationshipD
 
 ## Installation
 
+The package is published to [GitHub Packages](https://github.com/navikt/flyway2mermaid/packages). To install, first configure npm to use the GitHub registry for the `@navikt` scope:
+
 ```bash
-npm install -g flyway2mermaid
+echo "@navikt:registry=https://npm.pkg.github.com" >> .npmrc
+```
+
+Then install:
+
+```bash
+npm install -g @navikt/flyway2mermaid
 ```
 
 Or use directly with `npx`:
 
 ```bash
-npx flyway2mermaid ./migrations
+npx @navikt/flyway2mermaid ./migrations
+```
+
+### CI/CD usage
+
+In GitHub Actions, no extra auth is needed – `GITHUB_TOKEN` has read access to packages in the same org. Add this to your workflow:
+
+```yaml
+- uses: actions/setup-node@v4
+  with:
+    node-version: 22
+    registry-url: https://npm.pkg.github.com
+
+- name: Generate ER diagram
+  run: npx @navikt/flyway2mermaid ./migrations -o docs/schema.mmd
+  env:
+    NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ## Usage
@@ -90,24 +114,22 @@ erDiagram
 
 ## CI/CD Usage
 
-Add to your pipeline to auto-generate schema documentation:
-
-```yaml
-# GitHub Actions example
-- name: Generate ER diagram
-  run: npx flyway2mermaid ./migrations -o docs/schema.mmd
-```
+See [Installation → CI/CD usage](#cicd-usage) above for a complete workflow example.
 
 ## Programmatic API
 
 ```typescript
-import { readFlywayMigrations, buildSchema, generateMermaid } from "flyway2mermaid";
+import { readFlywayMigrations, buildSchema, generateMermaid } from "@navikt/flyway2mermaid";
 
 const migrations = await readFlywayMigrations("./migrations");
 const schema = buildSchema(migrations.map((m) => m.sql));
 const diagram = generateMermaid(schema);
 console.log(diagram);
 ```
+
+## Publishing
+
+A new version is published automatically when a [GitHub Release](https://github.com/navikt/flyway2mermaid/releases/new) is created. Make sure to update the version in `package.json` before creating the release.
 
 ## License
 

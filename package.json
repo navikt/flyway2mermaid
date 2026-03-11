@@ -1,5 +1,5 @@
 {
-  "name": "flyway2mermaid",
+  "name": "@navikt/flyway2mermaid",
   "version": "0.1.0",
   "description": "Generate Mermaid ER diagrams from Flyway SQL migration files",
   "main": "dist/index.js",
@@ -55,6 +55,10 @@
     "*.{json,md,yml,yaml,mmd}": [
       "prettier --write"
     ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/navikt/flyway2mermaid.git"
   },
   "engines": {
     "node": ">=18"
