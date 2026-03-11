@@ -36,8 +36,9 @@ runs:
         mkdir -p "$(dirname "${{ inputs.output }}")"
         node ${{ github.action_path }}/dist/cli.js "${{ inputs.migrations }}" -o "${{ inputs.output }}"
 
-    - name: Upload diagram
-      uses: actions/upload-artifact@v6
-      with:
-        name: er-diagram
-        path: ${{ inputs.output }}
+    - name: Write job summary
+      shell: bash
+      run: |
+        echo '```mermaid' >> "$GITHUB_STEP_SUMMARY"
+        cat "${{ inputs.output }}" >> "$GITHUB_STEP_SUMMARY"
+        echo '```' >> "$GITHUB_STEP_SUMMARY"
