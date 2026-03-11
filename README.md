@@ -1,5 +1,8 @@
 # flyway2mermaid
 
+[![CI](https://github.com/navikt/flyway2mermaid/actions/workflows/ci.yml/badge.svg)](https://github.com/navikt/flyway2mermaid/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Generate [Mermaid ER diagrams](https://mermaid.js.org/syntax/entityRelationshipDiagram.html) from [Flyway](https://flywaydb.org/) SQL migration files.
 
 ## Features
@@ -131,6 +134,10 @@ console.log(diagram);
 
 A new version is published automatically when a [GitHub Release](https://github.com/navikt/flyway2mermaid/releases/new) is created. Make sure to update the version in `package.json` before creating the release.
 
+## Contributing
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
 ## License
 
-MIT
+[MIT](LICENSE)
