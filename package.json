@@ -1,0 +1,36 @@
+{
+  "name": "flyway2mermaid",
+  "version": "0.1.0",
+  "description": "Generate Mermaid ER diagrams from Flyway SQL migration files",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "flyway2mermaid": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["flyway", "mermaid", "er-diagram", "database", "schema", "postgresql", "migration"],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^25.4.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "dependencies": {
+    "commander": "^14.0.3",
+    "pgsql-ast-parser": "^12.0.2"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}
