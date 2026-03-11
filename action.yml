@@ -1,0 +1,70 @@
+name: "flyway2mermaid"
+description: "Generate a Mermaid ER diagram from Flyway SQL migrations and commit it to the repo"
+
+inputs:
+  migrations:
+    description: "Path to directory containing Flyway migration SQL files"
+    required: true
+  output:
+    description: "Output file path"
+    required: false
+    default: "docs/schema.mmd"
+  commit:
+    description: "Commit and push the generated diagram"
+    required: false
+    default: "true"
+  commit-message:
+    description: "Commit message for the generated diagram"
+    required: false
+    default: "docs: update ER diagram [skip ci]"
+
+outputs:
+  diagram:
+    description: "Path to the generated diagram file"
+    value: ${{ inputs.output }}
+  changed:
+    description: "Whether the diagram changed ('true' or 'false')"
+    value: ${{ steps.check.outputs.changed }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    - name: Build flyway2mermaid
+      shell: bash
+      run: |
+        cd ${{ github.action_path }}
+        npm ci --ignore-scripts
+        npm run build
+
+    - name: Generate diagram
+      shell: bash
+      run: |
+        mkdir -p "$(dirname "${{ inputs.output }}")"
+        node ${{ github.action_path }}/dist/cli.js "${{ inputs.migrations }}" -o "${{ inputs.output }}"
+
+    - name: Check for changes
+      id: check
+      shell: bash
+      run: |
+        if git diff --quiet "${{ inputs.output }}" 2>/dev/null; then
+          echo "changed=false" >> "$GITHUB_OUTPUT"
+          echo "📊 ER diagram is up to date"
+        else
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "📊 ER diagram has changed"
+        fi
+
+    - name: Commit and push
+      if: inputs.commit == 'true' && steps.check.outputs.changed == 'true'
+      shell: bash
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add "${{ inputs.output }}"
+        git commit -m "${{ inputs.commit-message }}"
+        git push

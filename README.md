@@ -15,38 +15,17 @@ Generate [Mermaid ER diagrams](https://mermaid.js.org/syntax/entityRelationshipD
 
 ## Installation
 
-The package is published to [GitHub Packages](https://github.com/navikt/flyway2mermaid/packages). To install, first configure npm to use the GitHub registry for the `@navikt` scope:
+Run directly with `npx` – no install needed:
 
 ```bash
-echo "@navikt:registry=https://npm.pkg.github.com" >> .npmrc
+npx github:navikt/flyway2mermaid ./migrations
 ```
 
-Then install:
+Or install globally:
 
 ```bash
-npm install -g @navikt/flyway2mermaid
-```
-
-Or use directly with `npx`:
-
-```bash
-npx @navikt/flyway2mermaid ./migrations
-```
-
-### CI/CD usage
-
-In GitHub Actions, no extra auth is needed – `GITHUB_TOKEN` has read access to packages in the same org. Add this to your workflow:
-
-```yaml
-- uses: actions/setup-node@v4
-  with:
-    node-version: 22
-    registry-url: https://npm.pkg.github.com
-
-- name: Generate ER diagram
-  run: npx @navikt/flyway2mermaid ./migrations -o docs/schema.mmd
-  env:
-    NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+npm install -g github:navikt/flyway2mermaid
+flyway2mermaid ./migrations
 ```
 
 ## Usage
@@ -103,6 +82,80 @@ erDiagram
     }
 ```
 
+## GitHub Action
+
+The easiest way to keep your ER diagram up to date. Add this to your workflow:
+
+```yaml
+name: Update ER diagram
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/main/resources/db/migration/**"
+
+permissions:
+  contents: write
+
+jobs:
+  diagram:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: navikt/flyway2mermaid@v1
+        with:
+          migrations: src/main/resources/db/migration
+```
+
+That's it! The action generates the diagram, and if it changed, commits and pushes `docs/schema.mmd` automatically.
+
+To display the diagram in your README, add:
+
+````markdown
+```mermaid
+erDiagram
+```
+
+<!-- Or link to the file: -->
+
+[View ER diagram](docs/schema.mmd)
+````
+
+### Action inputs
+
+| Input            | Default                             | Description                        |
+| ---------------- | ----------------------------------- | ---------------------------------- |
+| `migrations`     | _(required)_                        | Path to Flyway migration directory |
+| `output`         | `docs/schema.mmd`                   | Output file path                   |
+| `commit`         | `true`                              | Commit and push the diagram        |
+| `commit-message` | `docs: update ER diagram [skip ci]` | Commit message                     |
+
+### Action outputs
+
+| Output    | Description                       |
+| --------- | --------------------------------- |
+| `diagram` | Path to the generated file        |
+| `changed` | `true` if the diagram was updated |
+
+### Advanced: generate without committing
+
+```yaml
+- uses: navikt/flyway2mermaid@v1
+  id: erd
+  with:
+    migrations: src/main/resources/db/migration
+    commit: "false"
+
+- name: Upload as artifact
+  if: steps.erd.outputs.changed == 'true'
+  uses: actions/upload-artifact@v4
+  with:
+    name: er-diagram
+    path: ${{ steps.erd.outputs.diagram }}
+```
+
 ## Supported SQL
 
 | Statement                       | Support                               |
@@ -117,7 +170,7 @@ erDiagram
 
 ## CI/CD Usage
 
-See [Installation → CI/CD usage](#cicd-usage) above for a complete workflow example.
+See [GitHub Action](#github-action) above.
 
 ## Programmatic API
 
