@@ -19,27 +19,143 @@ export function buildSchema(sqlStatements: string[]): Schema {
 }
 
 function applyMigration(schema: Schema, sql: string): void {
-  let statements: Statement[];
-  try {
-    statements = parse(sql, { locationTracking: false });
-  } catch {
-    // Skip unparseable statements (e.g. INSERT, GRANT, etc.)
-    return;
-  }
+  // Split into individual statements so one unparseable statement
+  // doesn't cause the entire migration file to be skipped.
+  const rawStatements = splitStatements(sql);
 
-  for (const stmt of statements) {
-    switch (stmt.type) {
-      case "create table":
-        handleCreateTable(schema, stmt);
-        break;
-      case "alter table":
-        handleAlterTable(schema, stmt);
-        break;
-      case "drop table":
-        handleDropTable(schema, stmt);
-        break;
+  for (const raw of rawStatements) {
+    let statements: Statement[];
+    try {
+      statements = parse(raw, { locationTracking: false });
+    } catch {
+      // Skip unparseable statements (e.g. INSERT, GRANT, CREATE INDEX, DO blocks, etc.)
+      continue;
+    }
+
+    for (const stmt of statements) {
+      switch (stmt.type) {
+        case "create table":
+          handleCreateTable(schema, stmt);
+          break;
+        case "alter table":
+          handleAlterTable(schema, stmt);
+          break;
+        case "drop table":
+          handleDropTable(schema, stmt);
+          break;
+      }
     }
   }
+}
+
+function splitStatements(sql: string): string[] {
+  const statements: string[] = [];
+  let current = "";
+  let inString = false;
+  let stringChar = "";
+  let inDollarQuote = false;
+  let dollarTag = "";
+  let inLineComment = false;
+  let inBlockComment = false;
+
+  for (let i = 0; i < sql.length; i++) {
+    const ch = sql[i];
+    const next = sql[i + 1] ?? "";
+
+    if (inLineComment) {
+      current += ch;
+      if (ch === "\n") inLineComment = false;
+      continue;
+    }
+
+    if (inBlockComment) {
+      current += ch;
+      if (ch === "*" && next === "/") {
+        current += next;
+        i++;
+        inBlockComment = false;
+      }
+      continue;
+    }
+
+    if (inDollarQuote) {
+      current += ch;
+      // Check for closing dollar-quote tag
+      if (ch === "$") {
+        const remaining = sql.slice(i);
+        if (remaining.startsWith(dollarTag)) {
+          current += dollarTag.slice(1); // skip the $ we already added
+          i += dollarTag.length - 1;
+          inDollarQuote = false;
+        }
+      }
+      continue;
+    }
+
+    if (inString) {
+      current += ch;
+      if (ch === stringChar) {
+        // Check for escaped quote ('')
+        if (stringChar === "'" && next === "'") {
+          current += next;
+          i++;
+        } else {
+          inString = false;
+        }
+      }
+      continue;
+    }
+
+    // Not inside any quote/comment
+    if (ch === "-" && next === "-") {
+      inLineComment = true;
+      current += ch;
+      continue;
+    }
+
+    if (ch === "/" && next === "*") {
+      inBlockComment = true;
+      current += ch;
+      continue;
+    }
+
+    if (ch === "'" || ch === '"') {
+      inString = true;
+      stringChar = ch;
+      current += ch;
+      continue;
+    }
+
+    if (ch === "$") {
+      // Try to match a dollar-quote tag: $tag$ or $$
+      const match = sql.slice(i).match(/^(\$[a-zA-Z0-9_]*\$)/);
+      if (match) {
+        dollarTag = match[1];
+        inDollarQuote = true;
+        current += dollarTag;
+        i += dollarTag.length - 1;
+        continue;
+      }
+    }
+
+    if (ch === ";") {
+      const trimmed = current.trim();
+      if (trimmed.length > 0) {
+        statements.push(trimmed + ";");
+      }
+      current = "";
+      continue;
+    }
+
+    current += ch;
+  }
+
+  const trimmed = current.trim();
+  if (trimmed.length > 0) {
+    statements.push(trimmed);
+  }
+
+  return statements;
 }
 
 function handleCreateTable(schema: Schema, stmt: any): void {

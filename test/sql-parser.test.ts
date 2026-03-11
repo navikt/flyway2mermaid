@@ -129,4 +129,36 @@ describe("buildSchema", () => {
 
     expect(schema.tables.size).toBe(1);
   });
+
+  it("parses CREATE TABLE even when mixed with unparseable statements in same file", () => {
+    const schema = buildSchema([
+      `
+        CREATE INDEX idx_users_email ON users (email);
+        CREATE TABLE orders (id SERIAL PRIMARY KEY, user_id INTEGER NOT NULL);
+        DO $$ BEGIN RAISE NOTICE 'hello'; END $$;
+        CREATE TABLE products (id SERIAL PRIMARY KEY, name TEXT NOT NULL);
+        CREATE TYPE status_enum AS ENUM ('active', 'inactive');
+      `,
+    ]);
+
+    expect(schema.tables.size).toBe(2);
+    expect(schema.tables.has("orders")).toBe(true);
+    expect(schema.tables.has("products")).toBe(true);
+  });
+
+  it("handles dollar-quoted strings in unparseable statements", () => {
+    const schema = buildSchema([
+      `
+        CREATE OR REPLACE FUNCTION test_func() RETURNS void AS $$
+        BEGIN
+          INSERT INTO log (msg) VALUES ('test; with semicolons');
+        END;
+        $$ LANGUAGE plpgsql;
+        CREATE TABLE events (id SERIAL PRIMARY KEY, name TEXT NOT NULL);
+      `,
+    ]);
+
+    expect(schema.tables.size).toBe(1);
+    expect(schema.tables.has("events")).toBe(true);
+  });
 });
