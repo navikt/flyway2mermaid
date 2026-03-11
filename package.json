@@ -11,16 +11,33 @@
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "tsc --noEmit",
-    "prepublishOnly": "npm run build"
+    "lint": "eslint . && tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepublishOnly": "npm run build",
+    "prepare": "husky"
   },
-  "keywords": ["flyway", "mermaid", "er-diagram", "database", "schema", "postgresql", "migration"],
+  "keywords": [
+    "flyway",
+    "mermaid",
+    "er-diagram",
+    "database",
+    "schema",
+    "postgresql",
+    "migration"
+  ],
   "author": "",
   "license": "MIT",
   "type": "module",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^25.4.0",
+    "eslint": "^10.0.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.3.3",
+    "prettier": "^3.8.1",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.57.0",
     "vitest": "^4.0.18"
   },
   "dependencies": {
@@ -30,6 +47,15 @@
   "files": [
     "dist"
   ],
+  "lint-staged": {
+    "*.{ts,js}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml,mmd}": [
+      "prettier --write"
+    ]
+  },
   "engines": {
     "node": ">=18"
   }

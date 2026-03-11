@@ -31,11 +31,12 @@ describe("readFlywayMigrations", () => {
 
   it("reads and sorts migration files", async () => {
     const migrations = await readFlywayMigrations(fixturesDir);
-    expect(migrations).toHaveLength(4);
+    expect(migrations).toHaveLength(5);
     expect(migrations[0].version).toBe(1);
     expect(migrations[1].version).toBe(2);
     expect(migrations[2].version).toBe(3);
     expect(migrations[3].version).toBe(4);
+    expect(migrations[4].version).toBe(5);
   });
 
   it("includes SQL content", async () => {

@@ -3,9 +3,7 @@ import type { Schema, Table, Column, ForeignKey } from "../model/schema.js";
 export function generateMermaid(schema: Schema): string {
   const lines: string[] = ["erDiagram"];
 
-  const tables = Array.from(schema.tables.values()).sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
+  const tables = Array.from(schema.tables.values()).sort((a, b) => a.name.localeCompare(b.name));
 
   // Collect all relationships
   const relationships = collectRelationships(tables);
@@ -21,9 +19,12 @@ export function generateMermaid(schema: Schema): string {
     lines.push(`    ${table.name} {`);
     for (const col of table.columns) {
       const parts = [formatType(col.type), col.name];
-      const annotations = getAnnotations(col, table);
-      if (annotations) {
-        parts.push(annotations);
+      const { keys, comment } = getAnnotations(col, table);
+      if (keys) {
+        parts.push(keys);
+      }
+      if (comment) {
+        parts.push(`"${comment}"`);
       }
       lines.push(`        ${parts.join(" ")}`);
     }
@@ -53,9 +54,7 @@ function collectRelationships(tables: Table[]): string[] {
     for (const fk of table.foreignKeys) {
       const cardinality = determineCardinality(table, fk);
       const label = fk.columns.join(", ");
-      relationships.push(
-        `${fk.referencedTable} ${cardinality} ${table.name} : "${label}"`
-      );
+      relationships.push(`${fk.referencedTable} ${cardinality} ${table.name} : "${label}"`);
     }
   }
 
@@ -74,12 +73,9 @@ function determineCardinality(table: Table, fk: ForeignKey): string {
 
   // Check if FK columns have a unique constraint
   const isUnique =
-    (fk.columns.length === 1 &&
-      table.columns.find((c) => c.name === fk.columns[0])?.unique) ||
+    (fk.columns.length === 1 && table.columns.find((c) => c.name === fk.columns[0])?.unique) ||
     table.uniqueConstraints.some(
-      (uc) =>
-        uc.length === fk.columns.length &&
-        uc.every((c) => fkColSet.has(c))
+      (uc) => uc.length === fk.columns.length && uc.every((c) => fkColSet.has(c)),
     );
 
   // Check nullable
@@ -102,26 +98,26 @@ function formatType(type: string): string {
   return type.replace(/[(),]/g, "_").replace(/_+$/, "");
 }
 
-function getAnnotations(col: Column, table: Table): string {
-  const annotations: string[] = [];
+function getAnnotations(col: Column, table: Table): { keys: string; comment: string } {
+  const keys: string[] = [];
+  let comment = "";
 
   if (col.primaryKey || table.primaryKey.includes(col.name)) {
-    annotations.push("PK");
+    keys.push("PK");
   }
 
   const isFk = table.foreignKeys.some((fk) => fk.columns.includes(col.name));
   if (isFk) {
-    annotations.push("FK");
+    keys.push("FK");
   }
 
   if (col.unique) {
-    annotations.push("UK");
+    keys.push("UK");
   }
 
   if (!col.nullable && !col.primaryKey && !table.primaryKey.includes(col.name)) {
-    annotations.push("\"NOT NULL\"");
+    comment = "NOT NULL";
   }
 
-  if (annotations.length === 0) return "";
-  return annotations.join(",");
+  return { keys: keys.join(","), comment };
 }

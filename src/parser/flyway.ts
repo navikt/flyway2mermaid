@@ -10,7 +10,9 @@ export interface FlywayMigration {
 
 const FLYWAY_VERSION_PATTERN = /^V(\d+(?:\.\d+)*)__(.+)\.sql$/i;
 
-export function parseFlywayVersion(filename: string): { version: number; description: string } | null {
+export function parseFlywayVersion(
+  filename: string,
+): { version: number; description: string } | null {
   const match = filename.match(FLYWAY_VERSION_PATTERN);
   if (!match) return null;
 

@@ -39,7 +39,8 @@ flyway2mermaid ./migrations > schema.mmd
 
 Given these migration files:
 
-**V1__create_departments.sql**
+**V1\_\_create_departments.sql**
+
 ```sql
 CREATE TABLE departments (
     id SERIAL PRIMARY KEY,
@@ -47,7 +48,8 @@ CREATE TABLE departments (
 );
 ```
 
-**V2__create_users.sql**
+**V2\_\_create_users.sql**
+
 ```sql
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
@@ -76,15 +78,15 @@ erDiagram
 
 ## Supported SQL
 
-| Statement | Support |
-|-----------|---------|
-| `CREATE TABLE` | ✅ Columns, types, inline constraints |
-| `ALTER TABLE ADD COLUMN` | ✅ |
-| `ALTER TABLE ADD CONSTRAINT` | ✅ PK, FK, UNIQUE |
-| `DROP TABLE` | ✅ |
-| `PRIMARY KEY` | ✅ Inline and table-level |
-| `FOREIGN KEY` / `REFERENCES` | ✅ Inline and table-level |
-| `NOT NULL`, `UNIQUE`, `DEFAULT` | ✅ |
+| Statement                       | Support                               |
+| ------------------------------- | ------------------------------------- |
+| `CREATE TABLE`                  | ✅ Columns, types, inline constraints |
+| `ALTER TABLE ADD COLUMN`        | ✅                                    |
+| `ALTER TABLE ADD CONSTRAINT`    | ✅ PK, FK, UNIQUE                     |
+| `DROP TABLE`                    | ✅                                    |
+| `PRIMARY KEY`                   | ✅ Inline and table-level             |
+| `FOREIGN KEY` / `REFERENCES`    | ✅ Inline and table-level             |
+| `NOT NULL`, `UNIQUE`, `DEFAULT` | ✅                                    |
 
 ## CI/CD Usage
 
@@ -102,7 +104,7 @@ Add to your pipeline to auto-generate schema documentation:
 import { readFlywayMigrations, buildSchema, generateMermaid } from "flyway2mermaid";
 
 const migrations = await readFlywayMigrations("./migrations");
-const schema = buildSchema(migrations.map(m => m.sql));
+const schema = buildSchema(migrations.map((m) => m.sql));
 const diagram = generateMermaid(schema);
 console.log(diagram);
 ```

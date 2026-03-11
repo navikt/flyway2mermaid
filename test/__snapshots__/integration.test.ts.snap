@@ -1,0 +1,56 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`integration: flyway files to mermaid > generates correct ER diagram from fixture migrations 1`] = `
+"erDiagram
+    avklaringkode ||--|{ avklaring : "avklaring_kode"
+    behandling ||--|{ avklaring : "behandling_id"
+    projects ||--|{ project_members : "project_id"
+    users ||--|{ project_members : "user_id"
+    users ||--|{ projects : "owner_id"
+    departments ||--o{ users : "department_id"
+
+    avklaring {
+        uuid id PK
+        text avklaring_kode FK "NOT NULL"
+        uuid behandling_id FK "NOT NULL"
+        timestamptz opprettet
+    }
+
+    avklaringkode {
+        text kode PK
+    }
+
+    behandling {
+        uuid behandling_id PK
+        text status "NOT NULL"
+    }
+
+    departments {
+        serial id PK
+        varchar_100 name "NOT NULL"
+        varchar_10 code UK
+    }
+
+    project_members {
+        integer project_id PK,FK
+        integer user_id PK,FK
+        varchar_20 role
+    }
+
+    projects {
+        serial id PK
+        varchar_200 name "NOT NULL"
+        integer owner_id FK "NOT NULL"
+        varchar_20 status "NOT NULL"
+    }
+
+    users {
+        serial id PK
+        varchar_50 username UK "NOT NULL"
+        text email "NOT NULL"
+        integer department_id FK
+        timestamp created_at
+        varchar_20 phone
+    }
+"
+`;

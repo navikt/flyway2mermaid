@@ -65,9 +65,7 @@ describe("generateMermaid", () => {
     expect(output).toContain("users");
     expect(output).toContain("projects");
     // Two relationships
-    const relationshipLines = output
-      .split("\n")
-      .filter((l) => l.includes("||"));
+    const relationshipLines = output.split("\n").filter((l) => l.includes("||"));
     expect(relationshipLines.length).toBe(2);
   });
 

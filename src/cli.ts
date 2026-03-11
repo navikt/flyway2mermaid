@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import { readFlywayMigrations } from "./parser/flyway.js";
 import { buildSchema } from "./parser/sql.js";
 import { generateMermaid } from "./generator/mermaid.js";
