@@ -71,7 +71,7 @@ erDiagram
 
     users {
         serial id PK
-        varchar_50 username UK,"NOT NULL"
+        varchar_50 username UK "NOT NULL"
         integer department_id FK
     }
 ```
