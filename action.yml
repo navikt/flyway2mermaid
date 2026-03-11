@@ -1,5 +1,5 @@
 name: "flyway2mermaid"
-description: "Generate a Mermaid ER diagram from Flyway SQL migrations and commit it to the repo"
+description: "Generate a Mermaid ER diagram from Flyway SQL migrations"
 
 inputs:
   migrations:
@@ -9,22 +9,11 @@ inputs:
     description: "Output file path"
     required: false
     default: "docs/schema.mmd"
-  commit:
-    description: "Commit and push the generated diagram"
-    required: false
-    default: "true"
-  commit-message:
-    description: "Commit message for the generated diagram"
-    required: false
-    default: "docs: update ER diagram [skip ci]"
 
 outputs:
   diagram:
     description: "Path to the generated diagram file"
     value: ${{ inputs.output }}
-  changed:
-    description: "Whether the diagram changed ('true' or 'false')"
-    value: ${{ steps.check.outputs.changed }}
 
 runs:
   using: "composite"
@@ -47,25 +36,8 @@ runs:
         mkdir -p "$(dirname "${{ inputs.output }}")"
         node ${{ github.action_path }}/dist/cli.js "${{ inputs.migrations }}" -o "${{ inputs.output }}"
 
-    - name: Check for changes
-      id: check
-      shell: bash
-      run: |
-        git add "${{ inputs.output }}"
-        if git diff --cached --quiet "${{ inputs.output }}"; then
-          echo "changed=false" >> "$GITHUB_OUTPUT"
-          echo "📊 ER diagram is up to date"
-        else
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-          echo "📊 ER diagram has changed"
-        fi
-
-    - name: Commit and push
-      if: inputs.commit == 'true' && steps.check.outputs.changed == 'true'
-      shell: bash
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git add "${{ inputs.output }}"
-        git commit -m "${{ inputs.commit-message }}"
-        git push
+    - name: Upload diagram
+      uses: actions/upload-artifact@v4
+      with:
+        name: er-diagram
+        path: ${{ inputs.output }}
