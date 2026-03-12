@@ -3,7 +3,7 @@ import type { Schema, Table, Column, ForeignKey } from "../model/schema.js";
 export function generateMermaid(schema: Schema): string {
   const lines: string[] = ["erDiagram"];
 
-  const tables = Array.from(schema.tables.values()).sort((a, b) => a.name.localeCompare(b.name));
+  const tables = sortByImportance(Array.from(schema.tables.values()));
 
   // Collect all relationships
   const relationships = collectRelationships(tables);
@@ -96,6 +96,65 @@ function determineCardinality(table: Table, fk: ForeignKey): string {
 function formatType(type: string): string {
   // Mermaid doesn't like special characters in types, simplify
   return type.replace(/[(),]/g, "_").replace(/_+$/, "");
+}
+
+/**
+ * Sort tables so that the most central/referenced tables come first,
+ * followed by their dependents. This produces a more compact Mermaid layout
+ * since the renderer uses declaration order as a hint for positioning.
+ */
+function sortByImportance(tables: Table[]): Table[] {
+  // Count how many tables reference each table via FKs
+  const refCount = new Map<string, number>();
+  for (const t of tables) {
+    refCount.set(t.name, 0);
+  }
+  for (const t of tables) {
+    for (const fk of t.foreignKeys) {
+      if (refCount.has(fk.referencedTable)) {
+        refCount.set(fk.referencedTable, refCount.get(fk.referencedTable)! + 1);
+      }
+    }
+  }
+
+  // Build dependency graph: table -> set of tables it depends on (FK targets)
+  const dependencies = new Map<string, Set<string>>();
+  for (const t of tables) {
+    dependencies.set(
+      t.name,
+      new Set(t.foreignKeys.map((fk) => fk.referencedTable).filter((ref) => ref !== t.name)),
+    );
+  }
+
+  // Topological sort (Kahn's algorithm), prioritising high-refcount tables
+  const sorted: Table[] = [];
+  const tableMap = new Map(tables.map((t) => [t.name, t]));
+  const remaining = new Map(dependencies);
+
+  while (remaining.size > 0) {
+    // Find tables whose dependencies are all already sorted
+    const ready = Array.from(remaining.entries())
+      .filter(([, deps]) => Array.from(deps).every((d) => !remaining.has(d)))
+      .map(([name]) => name);
+
+    if (ready.length === 0) {
+      // Cycle detected – pick the most-referenced remaining table to break it
+      const fallback = Array.from(remaining.keys()).sort(
+        (a, b) => (refCount.get(b) ?? 0) - (refCount.get(a) ?? 0) || a.localeCompare(b),
+      );
+      ready.push(fallback[0]);
+    }
+
+    // Sort this batch: most referenced first, then alphabetically
+    ready.sort((a, b) => (refCount.get(b) ?? 0) - (refCount.get(a) ?? 0) || a.localeCompare(b));
+
+    for (const name of ready) {
+      remaining.delete(name);
+      sorted.push(tableMap.get(name)!);
+    }
+  }
+
+  return sorted;
 }
 
 function getAnnotations(col: Column, table: Table): { keys: string; comment: string } {
