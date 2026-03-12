@@ -36,25 +36,27 @@ export function generateMermaid(schema: Schema): string {
 }
 
 function collectRelationships(tables: Table[]): string[] {
-  const relationships: string[] = [];
-  const fkColumnsMap = new Map<string, Set<string>>();
-
-  // Build a set of FK columns per table for quick lookup
-  for (const table of tables) {
-    const fkCols = new Set<string>();
-    for (const fk of table.foreignKeys) {
-      for (const col of fk.columns) {
-        fkCols.add(col);
-      }
-    }
-    fkColumnsMap.set(table.name, fkCols);
-  }
-
+  // Collect all relationship lines, grouped by referenced (parent) table
+  const byParent = new Map<string, string[]>();
   for (const table of tables) {
     for (const fk of table.foreignKeys) {
       const cardinality = determineCardinality(table, fk);
       const label = fk.columns.join(", ");
-      relationships.push(`${fk.referencedTable} ${cardinality} ${table.name} : "${label}"`);
+      const line = `${fk.referencedTable} ${cardinality} ${table.name} : "${label}"`;
+      if (!byParent.has(fk.referencedTable)) {
+        byParent.set(fk.referencedTable, []);
+      }
+      byParent.get(fk.referencedTable)!.push(line);
+    }
+  }
+
+  // Emit relationships in the same order as the sorted tables,
+  // so the most important parent tables are introduced to Mermaid first
+  const relationships: string[] = [];
+  for (const table of tables) {
+    const rels = byParent.get(table.name);
+    if (rels) {
+      relationships.push(...rels);
     }
   }
 

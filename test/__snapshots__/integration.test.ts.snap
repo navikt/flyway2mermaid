@@ -2,12 +2,12 @@
 
 exports[`integration: flyway files to mermaid > generates correct ER diagram from fixture migrations 1`] = `
 "erDiagram
-    departments ||--o{ users : "department_id"
     avklaringkode ||--|{ avklaring : "avklaring_kode"
     behandling ||--|{ avklaring : "behandling_id"
+    departments ||--o{ users : "department_id"
     users ||--|{ projects : "owner_id"
-    projects ||--|{ project_members : "project_id"
     users ||--|{ project_members : "user_id"
+    projects ||--|{ project_members : "project_id"
 
     avklaringkode {
         text kode PK
