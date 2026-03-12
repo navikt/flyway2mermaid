@@ -9,6 +9,9 @@ inputs:
     description: "Output file path"
     required: false
     default: "docs/schema.mmd"
+  direction:
+    description: "Diagram direction: TB (top-bottom), BT (bottom-top), LR (left-right), RL (right-left)"
+    required: false
 
 outputs:
   diagram:
@@ -34,7 +37,11 @@ runs:
       shell: bash
       run: |
         mkdir -p "$(dirname "${{ inputs.output }}")"
-        node ${{ github.action_path }}/dist/cli.js "${{ inputs.migrations }}" -o "${{ inputs.output }}"
+        DIRECTION_ARG=""
+        if [ -n "${{ inputs.direction }}" ]; then
+          DIRECTION_ARG="--direction ${{ inputs.direction }}"
+        fi
+        node ${{ github.action_path }}/dist/cli.js "${{ inputs.migrations }}" -o "${{ inputs.output }}" $DIRECTION_ARG
 
     - name: Write job summary
       shell: bash

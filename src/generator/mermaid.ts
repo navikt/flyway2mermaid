@@ -1,7 +1,17 @@
 import type { Schema, Table, Column, ForeignKey } from "../model/schema.js";
 
-export function generateMermaid(schema: Schema): string {
+export type Direction = "TB" | "BT" | "LR" | "RL";
+
+export interface MermaidOptions {
+  direction?: Direction;
+}
+
+export function generateMermaid(schema: Schema, options: MermaidOptions = {}): string {
   const lines: string[] = ["erDiagram"];
+
+  if (options.direction) {
+    lines.push(`    direction ${options.direction}`);
+  }
 
   const tables = sortByImportance(Array.from(schema.tables.values()));
 

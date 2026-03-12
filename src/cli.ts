@@ -4,7 +4,7 @@ import { Command } from "commander";
 import { writeFile } from "node:fs/promises";
 import { readFlywayMigrations } from "./parser/flyway.js";
 import { buildSchema } from "./parser/sql.js";
-import { generateMermaid } from "./generator/mermaid.js";
+import { generateMermaid, type Direction } from "./generator/mermaid.js";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
@@ -18,7 +18,8 @@ program
   .version(pkg.version)
   .argument("<input-dir>", "Directory containing Flyway migration SQL files")
   .option("-o, --output <file>", "Output file (default: stdout)")
-  .action(async (inputDir: string, options: { output?: string }) => {
+  .option("-d, --direction <direction>", "Diagram direction: TB, BT, LR, RL")
+  .action(async (inputDir: string, options: { output?: string; direction?: string }) => {
     try {
       const migrations = await readFlywayMigrations(inputDir);
 
@@ -35,7 +36,13 @@ program
         process.exit(1);
       }
 
-      const mermaid = generateMermaid(schema);
+      const direction = options.direction?.toUpperCase() as Direction | undefined;
+      if (direction && !["TB", "BT", "LR", "RL"].includes(direction)) {
+        console.error(`Invalid direction: ${options.direction}. Must be TB, BT, LR, or RL.`);
+        process.exit(1);
+      }
+
+      const mermaid = generateMermaid(schema, { direction });
 
       if (options.output) {
         await writeFile(options.output, mermaid, "utf-8");
