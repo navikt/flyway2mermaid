@@ -3,11 +3,9 @@
 [![CI](https://github.com/navikt/flyway2mermaid/actions/workflows/ci.yml/badge.svg)](https://github.com/navikt/flyway2mermaid/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A GitHub Action that generates [Mermaid ER diagrams](https://mermaid.js.org/syntax/entityRelationshipDiagram.html) from [Flyway](https://flywaydb.org/) SQL migration files. The diagram is uploaded as a build artifact.
+A GitHub Action that generates [Mermaid ER diagrams](https://mermaid.js.org/syntax/entityRelationshipDiagram.html) from [Flyway](https://flywaydb.org/) SQL migration files.
 
-## Quick start
-
-Add this workflow to your repository:
+## GitHub Action
 
 ```yaml
 name: Update ER diagram
@@ -21,15 +19,39 @@ on:
 jobs:
   diagram:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v6
 
       - uses: navikt/flyway2mermaid@v1
         with:
           migrations: src/main/resources/db/migration
+          direction: LR
+          commit: true
 ```
 
-That's it! When migrations change, the action generates a Mermaid ER diagram and uploads it as the `er-diagram` build artifact.
+The action reads your Flyway migrations, generates a Mermaid ER diagram, and optionally posts it as a job summary and/or commits it to the repository.
+
+### Inputs
+
+| Input            | Default                            | Description                                                            |
+| ---------------- | ---------------------------------- | ---------------------------------------------------------------------- |
+| `migrations`     | _(required)_                       | Path to Flyway migration directory                                     |
+| `output`         | `docs/schema.mmd`                  | Output file path                                                       |
+| `direction`      |                                    | Diagram direction: `TB` (top-bottom), `BT`, `LR` (left-right), or `RL` |
+| `summary`        | `true`                             | Post diagram as GitHub Actions job summary                             |
+| `commit`         | `false`                            | Commit the generated diagram to the repository                         |
+| `commit-message` | `chore: update Mermaid ER diagram` | Commit message when `commit` is enabled                                |
+
+### Outputs
+
+| Output    | Description                |
+| --------- | -------------------------- |
+| `diagram` | Path to the generated file |
+
+> [!NOTE]
+> The `commit` option requires `contents: write` permission. The commit is skipped if the diagram hasn't changed.
 
 ## Example
 
@@ -72,28 +94,6 @@ erDiagram
     }
 ```
 
-## Inputs
-
-| Input        | Default           | Description                        |
-| ------------ | ----------------- | ---------------------------------- |
-| `migrations` | _(required)_      | Path to Flyway migration directory |
-| `output`     | `docs/schema.mmd` | Output file path                   |
-
-## Outputs
-
-| Output    | Description                |
-| --------- | -------------------------- |
-| `diagram` | Path to the generated file |
-
-## Advanced: custom output path
-
-```yaml
-- uses: navikt/flyway2mermaid@v1
-  with:
-    migrations: src/main/resources/db/migration
-    output: schema.mmd
-```
-
 ## Supported SQL
 
 | Statement                       | Support                               |
@@ -105,6 +105,18 @@ erDiagram
 | `PRIMARY KEY`                   | ✅ Inline and table-level             |
 | `FOREIGN KEY` / `REFERENCES`    | ✅ Inline and table-level             |
 | `NOT NULL`, `UNIQUE`, `DEFAULT` | ✅                                    |
+
+## Diagram layout
+
+Tables are sorted topologically by importance — the most referenced tables appear first, giving Mermaid's layout engine better hints for positioning. Use the `direction` input to control the overall flow (`LR` often produces more compact diagrams).
+
+## CLI
+
+The tool can also be used standalone:
+
+```bash
+npx @navikt/flyway2mermaid src/main/resources/db/migration -o docs/schema.mmd --direction LR
+```
 
 ## Contributing
 
