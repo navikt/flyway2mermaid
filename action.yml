@@ -12,6 +12,18 @@ inputs:
   direction:
     description: "Diagram direction: TB (top-bottom), BT (bottom-top), LR (left-right), RL (right-left)"
     required: false
+  summary:
+    description: "Post diagram as job summary"
+    required: false
+    default: "true"
+  commit:
+    description: "Commit the generated diagram to the repository"
+    required: false
+    default: "false"
+  commit-message:
+    description: "Commit message when commit is enabled"
+    required: false
+    default: "chore: update Mermaid ER diagram"
 
 outputs:
   diagram:
@@ -44,8 +56,23 @@ runs:
         node ${{ github.action_path }}/dist/cli.js "${{ inputs.migrations }}" -o "${{ inputs.output }}" $DIRECTION_ARG
 
     - name: Write job summary
+      if: inputs.summary == 'true'
       shell: bash
       run: |
         echo '```mermaid' >> "$GITHUB_STEP_SUMMARY"
         cat "${{ inputs.output }}" >> "$GITHUB_STEP_SUMMARY"
         echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Commit diagram
+      if: inputs.commit == 'true'
+      shell: bash
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add "${{ inputs.output }}"
+        if git diff --cached --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "${{ inputs.commit-message }}"
+          git push
+        fi
